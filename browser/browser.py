@@ -31,8 +31,9 @@ class Browser(Chrome):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.save_cookies()
-        super().__exit__(exc_type, exc_val, exc_tb)
+        self.close()
         self.quit()
+        super().__exit__(exc_type, exc_val, exc_tb)
 
     def initialize(self):
         options = self.options + ["start-maximized"]

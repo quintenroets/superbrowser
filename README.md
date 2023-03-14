@@ -1,4 +1,4 @@
-# Superchat-cli
+# Superbrowser
 Selenium Chromedriver with extended functionality
 
 ## Usage
