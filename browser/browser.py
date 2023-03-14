@@ -3,15 +3,22 @@ from dataclasses import dataclass, field
 from plib import Path
 from selenium.common import exceptions as exc
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import ui
+from selenium.webdriver.support.expected_conditions import presence_of_element_located
 
 
 @dataclass
 class Browser(Chrome):
     root_url: str = None
     cookies_path: Path = None
-    headless: bool = False
+    headless: bool = True
     options: list = field(default_factory=list)
     experimental_options: dict = field(default_factory=dict)
+    timeout: int = 10
+
+    def __post_init__(self):
+        self.page_load_locator = (By.TAG_NAME, "body")
 
     @property
     def saved_cookies(self) -> dict | None:
@@ -24,7 +31,6 @@ class Browser(Chrome):
 
     def __enter__(self):
         self.initialize()
-        super().__init__()
         self.load_root_url()
         self.root_url = self.current_url  # standardized version
         self.load_cookies()
@@ -42,9 +48,10 @@ class Browser(Chrome):
 
         browser_options = ChromeOptions()
         for option in options:
-            browser_options.add_argument(f"--{option}")
+            browser_options.add_argument(option)
         for name, value in self.experimental_options:
             browser_options.add_experimental_option(name, value)
+        super().__init__(options=browser_options)
 
     def load_root_url(self, reload=False):
         if self.root_url:
@@ -68,3 +75,15 @@ class Browser(Chrome):
         if self.cookies_path is not None:
             self.load_root_url()
             self.saved_cookies = self.get_cookies()
+
+    def get(self, url, wait_for_load=False):
+        super().get(url)
+        if wait_for_load:
+            self.wait_for_page_load()
+
+    def wait_for_page_load(self, page_load_locator=None):
+        if page_load_locator is None:
+            page_load_locator = self.page_load_locator
+        page_loaded = presence_of_element_located(page_load_locator)
+        waiter = ui.WebDriverWait(self, self.timeout)
+        waiter.until(page_loaded)
