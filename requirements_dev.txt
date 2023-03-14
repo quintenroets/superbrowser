@@ -1,0 +1,4 @@
+-r requirements.txt
+hypothesis
+pre-commit
+pytest
