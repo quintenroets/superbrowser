@@ -1,4 +1,7 @@
+import time
+import urllib.parse
 from dataclasses import dataclass, field
+from functools import cached_property
 
 from plib import Path
 from selenium.common import exceptions as exc
@@ -16,9 +19,14 @@ class Browser(Chrome):
     options: list = field(default_factory=list)
     experimental_options: dict = field(default_factory=dict)
     timeout: int = 10
+    sleep_interval: int = 2
 
     def __post_init__(self):
         self.page_load_locator = (By.TAG_NAME, "body")
+
+    @property
+    def login_locator(self):
+        raise NotImplementedError
 
     @property
     def saved_cookies(self) -> dict | None:
@@ -29,6 +37,10 @@ class Browser(Chrome):
         if self.cookies_path is not None:
             self.cookies_path.encrypted.yaml = value
 
+    @cached_property
+    def waiter(self):
+        return ui.WebDriverWait(self, self.timeout)
+
     def __enter__(self):
         self.initialize()
         self.load_root_url()
@@ -36,7 +48,8 @@ class Browser(Chrome):
         self.load_cookies()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.save_cookies()
+        if not exc_type:
+            self.save_cookies()
         self.close()
         self.quit()
         super().__exit__(exc_type, exc_val, exc_tb)
@@ -76,14 +89,53 @@ class Browser(Chrome):
             self.load_root_url()
             self.saved_cookies = self.get_cookies()
 
+    def wait_for_page_load(self, page_load_locator=None):
+        if page_load_locator is None:
+            page_load_locator = self.page_load_locator
+        self.wait_for_element(page_load_locator)
+
+    def wait_for_element(self, locator):
+        condition = presence_of_element_located(locator)
+        self.wait_for(condition)
+
+    def wait_for(self, condition):
+        self.waiter.until(condition)
+
+    def check_login(self):
+        if not self.is_logged_in():
+            self.login()
+
+    def is_present(self, by=By.ID, value: str | None = None) -> bool:
+        try:
+            self.find_element(by, value)
+            is_present = True
+        except exc.NoSuchElementException:
+            is_present = False
+        return is_present
+
+    def is_logged_in(self):
+        return not self.is_present(*self.login_locator)
+
+    def login(self):
+        self.click_login()
+
+    def click_login(self):
+        self.login_button.click()
+
+    @property
+    def login_button(self):
+        return self.find_element(*self.login_locator)
+
     def get(self, url, wait_for_load=False):
+        if not self.is_absolute(url):
+            url = urllib.parse.urljoin(self.root_url, url)
         super().get(url)
         if wait_for_load:
             self.wait_for_page_load()
 
-    def wait_for_page_load(self, page_load_locator=None):
-        if page_load_locator is None:
-            page_load_locator = self.page_load_locator
-        page_loaded = presence_of_element_located(page_load_locator)
-        waiter = ui.WebDriverWait(self, self.timeout)
-        waiter.until(page_loaded)
+    @classmethod
+    def is_absolute(cls, url):
+        return any(url.startswith(scheme) for scheme in ("http", "https"))
+
+    def sleep(self):
+        time.sleep(self.sleep_interval)
