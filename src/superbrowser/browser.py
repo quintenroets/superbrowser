@@ -47,7 +47,7 @@ class Browser(Chrome):
             self.cookies_path.encrypted.yaml = value
 
     @cached_property
-    def waiter(self) -> ui.WebDriverWait:
+    def waiter(self) -> ui.WebDriverWait[Chrome]:
         return ui.WebDriverWait(self, self.timeout)
 
     def __enter__(self) -> None:
@@ -71,7 +71,7 @@ class Browser(Chrome):
     def initialize(self) -> None:
         browser_options = ChromeOptions()
         for option in self.generate_options():
-            browser_options.add_argument(option)  # type: ignore
+            browser_options.add_argument(option)
         for name, value in self.experimental_options.items():
             browser_options.add_experimental_option(name, value)
         super().__init__(options=browser_options)
