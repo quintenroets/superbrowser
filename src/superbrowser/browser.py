@@ -2,13 +2,14 @@ import time
 import urllib.parse
 from dataclasses import dataclass, field
 from functools import cached_property
+from types import TracebackType
 
-from plib import Path
 from selenium.common import exceptions as exc
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import ui
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
+from superpathlib import Path
 
 
 @dataclass
@@ -21,7 +22,7 @@ class Browser(Chrome):
     timeout: int = 10
     sleep_interval: int = 2
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.page_load_locator = (By.TAG_NAME, "body")
 
     @property
@@ -33,7 +34,7 @@ class Browser(Chrome):
         return self.cookies_path and self.cookies_path.yaml
 
     @saved_cookies.setter
-    def saved_cookies(self, value):
+    def saved_cookies(self, value) -> None:
         if self.cookies_path is not None:
             self.cookies_path.encrypted.yaml = value
 
@@ -41,20 +42,25 @@ class Browser(Chrome):
     def waiter(self):
         return ui.WebDriverWait(self, self.timeout)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.initialize()
         self.load_root_url()
         self.root_url = self.current_url  # standardized version
         self.load_cookies()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         if not exc_type:
             self.save_cookies()
         self.close()
         self.quit()
         super().__exit__(exc_type, exc_val, exc_tb)
 
-    def initialize(self):
+    def initialize(self) -> None:
         options = self.options + ["start-maximized"]
         if self.headless:
             options.append("headless")
@@ -66,42 +72,42 @@ class Browser(Chrome):
             browser_options.add_experimental_option(name, value)
         super().__init__(options=browser_options)
 
-    def load_root_url(self, reload=False):
+    def load_root_url(self, reload: bool = False) -> None:
         if self.root_url:
             if reload or self.current_url != self.root_url:
                 self.get(self.root_url)
 
-    def load_cookies(self):
+    def load_cookies(self) -> None:
         cookies = self.saved_cookies
         if cookies is not None:
             self.add_cookies(cookies)
             self.load_root_url(reload=True)
 
-    def add_cookies(self, cookies):
+    def add_cookies(self, cookies) -> None:
         for cookie in cookies:
             try:
                 self.add_cookie(cookie)
             except exc.InvalidCookieDomainException:
                 pass
 
-    def save_cookies(self):
+    def save_cookies(self) -> None:
         if self.cookies_path is not None:
             self.load_root_url()
             self.saved_cookies = self.get_cookies()
 
-    def wait_for_page_load(self, page_load_locator=None):
+    def wait_for_page_load(self, page_load_locator=None) -> None:
         if page_load_locator is None:
             page_load_locator = self.page_load_locator
         self.wait_for_element(page_load_locator)
 
-    def wait_for_element(self, locator):
+    def wait_for_element(self, locator) -> None:
         condition = presence_of_element_located(locator)
         self.wait_for(condition)
 
-    def wait_for(self, condition):
+    def wait_for(self, condition) -> None:
         self.waiter.until(condition)
 
-    def check_login(self):
+    def check_login(self) -> None:
         if not self.is_logged_in():
             self.login()
 
@@ -113,20 +119,20 @@ class Browser(Chrome):
             is_present = False
         return is_present
 
-    def is_logged_in(self):
+    def is_logged_in(self) -> bool:
         return not self.is_present(*self.login_locator)
 
-    def login(self):
+    def login(self) -> None:
         self.click_login()
 
-    def click_login(self):
+    def click_login(self) -> None:
         self.login_button.click()
 
     @property
     def login_button(self):
         return self.find_element(*self.login_locator)
 
-    def get(self, url, wait_for_load=False):
+    def get(self, url, wait_for_load: bool = False) -> None:
         if not self.is_absolute(url):
             url = urllib.parse.urljoin(self.root_url, url)
         super().get(url)
@@ -137,5 +143,5 @@ class Browser(Chrome):
     def is_absolute(cls, url):
         return any(url.startswith(scheme) for scheme in ("http", "https"))
 
-    def sleep(self):
+    def sleep(self) -> None:
         time.sleep(self.sleep_interval)
