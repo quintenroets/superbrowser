@@ -1,4 +1,4 @@
-from browser import Browser
+from superbrowser import Browser
 
 
 def test_browser() -> None:
