@@ -1,7 +1,7 @@
-from browser import Browser
+from superbrowser import Browser
 
 
-def test_browser():
+def test_browser() -> None:
     browser = Browser()
     with browser:
         pass

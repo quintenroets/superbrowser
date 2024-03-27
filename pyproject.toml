@@ -1,0 +1,67 @@
+[project]
+name = "superbrowser"
+version = "0.1.0"
+description = "Selenium browser with extended functionality"
+authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "package-utils[context] >=0.6.1, <1",
+    "quinten-cli >=1.1.16, <2",
+    "selenium >=4.18.1, <5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis >=6.97.1, <7",
+    "package-dev-tools >=0.5.11, <1",
+    "package-dev-utils >=0.1.6, <1",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/quintenroets/superbrowser"
+
+[project.scripts]
+superbrowser = "superbrowser.cli:entry_point"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+
+[tool.coverage.report]
+precision = 4
+fail_under = 60
+
+[tool.mypy]
+strict = true
+no_implicit_reexport = false
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src", ".",
+]
+
+[tool.ruff]
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.setuptools.package-data]
+superbrowser = ["py.typed"]
