@@ -1,14 +1,12 @@
 [project]
 name = "superbrowser"
-version = "0.1.0"
+version = "0.1.1"
 description = "Selenium browser with extended functionality"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "package-utils[context] >=0.6.1, <1",
-    "quinten-cli >=1.1.16, <2",
     "selenium >=4.18.1, <5",
 ]
 
