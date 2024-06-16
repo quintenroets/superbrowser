@@ -1,18 +1,17 @@
 [project]
 name = "superbrowser"
-version = "0.1.1"
-description = "Selenium browser with extended functionality"
+version = "0.1.0"
+description = "Template for Python package published on PyPI"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "selenium >=4.18.1, <5",
+    "package-utils[context] >=0.6.1, <1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "hypothesis >=6.97.1, <7",
     "package-dev-tools >=0.5.11, <1",
     "package-dev-utils >=0.1.6, <1",
 ]
@@ -28,11 +27,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]
-command_line = "-m pytest"
+command_line = "-m pytest tests"
 
 [tool.coverage.report]
 precision = 4
-fail_under = 60
+fail_under = 100
 
 [tool.mypy]
 strict = true
