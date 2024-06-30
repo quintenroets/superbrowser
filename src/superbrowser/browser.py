@@ -1,3 +1,4 @@
+import contextlib
 import time
 import typing
 import urllib.parse
@@ -82,10 +83,9 @@ class Browser(Chrome):
         if self.headless:
             yield "headless"
 
-    def load_root_url(self, reload: bool = False) -> None:
-        if self.root_url:
-            if reload or self.current_url != self.root_url:
-                self.get(self.root_url)
+    def load_root_url(self, *, reload: bool = False) -> None:
+        if self.root_url and (reload or self.current_url != self.root_url):
+            self.get(self.root_url)
 
     def load_cookies(self) -> None:
         cookies = self.saved_cookies
@@ -94,11 +94,9 @@ class Browser(Chrome):
             self.load_root_url(reload=True)
 
     def add_cookies(self, cookies: list[dict[str, str]]) -> None:
-        for cookie in cookies:
-            try:
+        with contextlib.suppress(exc.InvalidCookieDomainException):
+            for cookie in cookies:
                 self.add_cookie(cookie)
-            except exc.InvalidCookieDomainException:
-                pass
 
     def save_cookies(self) -> None:
         if self.cookies_path is not None:
@@ -106,7 +104,8 @@ class Browser(Chrome):
             self.saved_cookies = self.get_cookies()
 
     def wait_for_page_load(
-        self, page_load_locator: tuple[str, str] | None = None
+        self,
+        page_load_locator: tuple[str, str] | None = None,
     ) -> None:
         if page_load_locator is None:
             page_load_locator = self.page_load_locator
@@ -144,7 +143,7 @@ class Browser(Chrome):
     def login_button(self) -> WebElement:
         return self.find_element(*self.login_locator)
 
-    def get(self, url: str, wait_for_load: bool = False) -> None:
+    def get(self, url: str, *, wait_for_load: bool = False) -> None:
         if not self.is_absolute(url):
             root_url = typing.cast(str, self.root_url)
             url = urllib.parse.urljoin(root_url, url)
