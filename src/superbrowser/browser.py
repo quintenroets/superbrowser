@@ -39,7 +39,7 @@ class Browser(Chrome):
         return (
             None
             if self.cookies_path is None
-            else typing.cast(list[dict[str, str]], self.cookies_path.yaml)
+            else typing.cast("list[dict[str, str]]", self.cookies_path.yaml)
         )
 
     @saved_cookies.setter
@@ -145,7 +145,7 @@ class Browser(Chrome):
 
     def get(self, url: str, *, wait_for_load: bool = False) -> None:
         if not self.is_absolute(url):
-            root_url = typing.cast(str, self.root_url)
+            root_url = typing.cast("str", self.root_url)
             url = urllib.parse.urljoin(root_url, url)
         super().get(url)
         if wait_for_load:
