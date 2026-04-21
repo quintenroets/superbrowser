@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
 from types import TracebackType
-from typing import Self
 
 from selenium.common import exceptions as exc
 from selenium.webdriver import Chrome, ChromeOptions
@@ -15,6 +14,7 @@ from selenium.webdriver.remote.webdriver import WebDriver, WebElement
 from selenium.webdriver.support import ui
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from superpathlib import Path
+from typing_extensions import Self
 
 
 @dataclass
