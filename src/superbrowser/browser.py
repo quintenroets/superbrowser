@@ -14,6 +14,7 @@ from selenium.webdriver.remote.webdriver import WebDriver, WebElement
 from selenium.webdriver.support import ui
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from superpathlib import Path
+from typing_extensions import Self
 
 
 @dataclass
@@ -21,7 +22,7 @@ class Browser(Chrome):
     root_url: str | None = None
     cookies_path: Path | None = None
     headless: bool = True
-    options: list[str] = field(default_factory=list)
+    arguments: list[str] = field(default_factory=list)
     experimental_options: dict[str, str] = field(default_factory=dict)
     timeout: int = 10
     sleep_interval: int = 2
@@ -51,11 +52,12 @@ class Browser(Chrome):
     def waiter(self) -> ui.WebDriverWait[Chrome]:
         return ui.WebDriverWait(self, self.timeout)
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Self:
         self.initialize()
         self.load_root_url()
         self.root_url = self.current_url  # standardized version
         self.load_cookies()
+        return self
 
     def __exit__(
         self,
@@ -78,7 +80,7 @@ class Browser(Chrome):
         super().__init__(options=browser_options)
 
     def generate_options(self) -> Iterator[str]:
-        yield from self.options
+        yield from self.arguments
         yield "start-maximized"
         if self.headless:
             yield "headless"
