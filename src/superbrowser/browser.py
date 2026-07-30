@@ -5,7 +5,6 @@ import urllib.parse
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
-from types import TracebackType
 
 from selenium.common import exceptions as exc
 from selenium.webdriver import Chrome, ChromeOptions
@@ -13,14 +12,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver, WebElement
 from selenium.webdriver.support import ui
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
-from superpathlib import Path
 from typing_extensions import Self
 
 
 @dataclass
 class Browser(Chrome):
     root_url: str | None = None
-    cookies_path: Path | None = None
+    cookies: list[dict[str, str]] = field(default_factory=list)
     headless: bool = True
     arguments: list[str] = field(default_factory=list)
     experimental_options: dict[str, str] = field(default_factory=dict)
@@ -35,41 +33,17 @@ class Browser(Chrome):
     def login_locator(self) -> tuple[str, str]:
         raise NotImplementedError
 
-    @property
-    def saved_cookies(self) -> list[dict[str, str]] | None:
-        return (
-            None
-            if self.cookies_path is None
-            else typing.cast("list[dict[str, str]]", self.cookies_path.yaml)
-        )
-
-    @saved_cookies.setter
-    def saved_cookies(self, value: list[dict[str, str]]) -> None:
-        if self.cookies_path is not None:
-            self.cookies_path.encrypted.yaml = value
-
     @cached_property
     def waiter(self) -> ui.WebDriverWait[Chrome]:
         return ui.WebDriverWait(self, self.timeout)
 
     def __enter__(self) -> Self:
         self.initialize()
-        self.load_root_url()
-        self.root_url = self.current_url  # standardized version
-        self.load_cookies()
+        self.ensure_at_root_url()
+        if self.root_url:
+            self.root_url = self.current_url  # standardized version
+        self.apply_cookies()
         return self
-
-    def __exit__(
-        self,
-        exception_type: type[BaseException] | None,
-        exception_value: BaseException | None,
-        exception_traceback: TracebackType | None,
-    ) -> None:
-        if not exception_type:
-            self.save_cookies()
-        self.close()
-        self.quit()
-        super().__exit__(exception_type, exception_value, exception_traceback)
 
     def initialize(self) -> None:
         browser_options = ChromeOptions()
@@ -85,25 +59,20 @@ class Browser(Chrome):
         if self.headless:
             yield "headless"
 
-    def load_root_url(self, *, reload: bool = False) -> None:
+    def ensure_at_root_url(self, *, reload: bool = False) -> None:
         if self.root_url and (reload or self.current_url != self.root_url):
             self.get(self.root_url)
 
-    def load_cookies(self) -> None:
-        cookies = self.saved_cookies
-        if cookies is not None:
-            self.add_cookies(cookies)
-            self.load_root_url(reload=True)
+    def apply_cookies(self) -> None:
+        if self.cookies:
+            for cookie in self.cookies:
+                with contextlib.suppress(exc.InvalidCookieDomainException):
+                    self.add_cookie(cookie)
+            self.ensure_at_root_url(reload=True)
 
-    def add_cookies(self, cookies: list[dict[str, str]]) -> None:
-        with contextlib.suppress(exc.InvalidCookieDomainException):
-            for cookie in cookies:
-                self.add_cookie(cookie)
-
-    def save_cookies(self) -> None:
-        if self.cookies_path is not None:
-            self.load_root_url()
-            self.saved_cookies = self.get_cookies()
+    def extract_cookies(self) -> list[dict[str, str]]:
+        self.ensure_at_root_url()
+        return typing.cast("list[dict[str, str]]", self.get_cookies())
 
     def wait_for_page_load(
         self,
@@ -155,8 +124,7 @@ class Browser(Chrome):
 
     @classmethod
     def is_absolute(cls, url: str) -> bool:
-        schemes = "http", "https"
-        return any(url.startswith(scheme) for scheme in schemes)
+        return url.startswith(("http://", "https://"))
 
     def sleep(self) -> None:
         time.sleep(self.sleep_interval)

@@ -1,6 +1,6 @@
 [project]
 name = "superbrowser"
-version = "0.1.1"
+version = "0.1.2"
 description = "Selenium browser with extended functionality"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = "MIT"
@@ -32,7 +32,7 @@ command_line = "-m pytest tests"
 
 [tool.coverage.report]
 precision = 4
-fail_under = 60
+fail_under = 80
 
 [tool.mypy]
 strict = true
