@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver, WebElement
 from selenium.webdriver.support import ui
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
-from typing_extensions import Self
+from typing import Self
 
 
 @dataclass
