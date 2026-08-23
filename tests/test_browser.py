@@ -39,3 +39,15 @@ def test_cookies_round_trip(url: str, cookies: list[dict[str, str]]) -> None:
         extracted_cookies = browser.extract_cookies()
     values = {cookie["name"]: cookie["value"] for cookie in extracted_cookies}
     assert values == {COOKIE["name"]: COOKIE["value"]}
+
+
+class BrokenBrowser(Browser):
+    def setup_session(self) -> None:
+        raise RuntimeError
+
+
+def test_setup_failure_quits_driver() -> None:
+    browser = BrokenBrowser()
+    with pytest.raises(RuntimeError), browser:
+        pass  # pragma: no cover
+    assert not browser.service.is_connectable()

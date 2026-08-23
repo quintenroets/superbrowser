@@ -39,11 +39,18 @@ class Browser(Chrome):
 
     def __enter__(self) -> Self:
         self.initialize()
+        try:
+            self.setup_session()
+        except BaseException:
+            self.quit()
+            raise
+        return self
+
+    def setup_session(self) -> None:
         self.ensure_at_root_url()
         if self.root_url:
             self.root_url = self.current_url  # standardized version
         self.apply_cookies()
-        return self
 
     def initialize(self) -> None:
         browser_options = ChromeOptions()
